@@ -23,8 +23,8 @@
       <div class="panel-head"><div><span class="step">01</span><h2>Cargar archivos</h2></div><span class="state" id="control-state">NUEVO</span></div>
       <div class="period-row"><label><span>Período</span><input id="period" type="month"></label></div>
       <div class="upload-grid">
-        <label class="dropzone" id="altas-zone"><input id="altas" type="file" accept=".xlsx,.xls,.csv,.pdf,application/pdf"><span class="file-kind">ALTAS</span><strong id="altas-name">Seleccionar archivo</strong><small>Excel, CSV o PDF</small></label>
-        <label class="dropzone" id="ventas-zone"><input id="ventas" type="file" accept=".xlsx,.xls,.csv,.pdf,application/pdf"><span class="file-kind">VENTAS</span><strong id="ventas-name">Seleccionar archivo</strong><small>Excel, CSV o PDF</small></label>
+        <label class="dropzone" id="altas-zone"><input id="altas" type="file" accept=".xlsx,.xls,.csv,.pdf,application/pdf"><span class="file-kind">ALTAS</span><strong id="altas-name">Arrastrá el archivo acá</strong><small>o hacé click · Excel, CSV o PDF</small></label>
+        <label class="dropzone" id="ventas-zone"><input id="ventas" type="file" accept=".xlsx,.xls,.csv,.pdf,application/pdf"><span class="file-kind">VENTAS</span><strong id="ventas-name">Arrastrá el archivo acá</strong><small>o hacé click · Excel, CSV o PDF</small></label>
       </div>
       <div class="actions"><button id="analyze" disabled>Analizar liquidación →</button><span id="helper">Cargá ambos archivos para continuar.</span></div>
     </section>
@@ -37,9 +37,10 @@
     </section>
     <section class="history"><div class="section-head"><div><span class="step">03</span><h2>Historial</h2></div><span id="history-count">0 controles</span></div><div id="history-list" class="history-list"></div></section>
   </main>
-  <footer><span>LC-0.3 · PDF habilitado</span><a href="../" onclick="event.preventDefault(); history.length > 1 ? history.back() : null;">← volver al Hub</a></footer>
+  <footer><span>LC-0.4 · Drag & Drop + PDF</span><a href="../" onclick="event.preventDefault(); history.length > 1 ? history.back() : null;">← volver al Hub</a></footer>
 </div>
 <script src="app.js"></script>
 <script src="pdf-support.js"></script>
+<script src="drag-drop.js"></script>
 </body>
 </html>
