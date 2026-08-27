@@ -75,7 +75,11 @@
     const tail = trailingMoney(line);
     if (!tail) return null;
 
-    const start = tail.prefix.match(/^(\d+)\s+(\S+)\s+(.+)$/);
+    // La fila puede traer FECHA y BROKER antes de CÁPITAS (ej. "09-06-26 DMC 1 A2 NO ...").
+    // Algunas filas (Zenith) no traen fecha. El broker puede tener varias palabras,
+    // así que se busca de forma no-codiciosa hasta dar con CÁPITAS + PLAN + COPAGOS(SI/NO).
+    const prefixNoDate = tail.prefix.replace(/^\d{2}-\d{2}-\d{2}\s+/, '');
+    const start = prefixNoDate.match(/^(?:.+?\s+)?(\d+)\s+(\S+)\s+(?:SI|NO)\s+(.+)$/i);
     if (!start) return null;
     const capitas = Number(start[1]);
     const plan = cleanLine(start[2]);
