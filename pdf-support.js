@@ -1,5 +1,6 @@
-// Soporte PDF para Control de Liquidaciones v0.3
+// Soporte PDF para Control de Liquidaciones v0.4 (FIXED)
 // Lee PDFs exportados desde planillas usando PDF.js. No usa OCR.
+// Versión mejorada con regex más flexibles y debugging
 
 (() => {
   const originalRead = window.read;
@@ -47,21 +48,52 @@
 
   function parseAltasLine(line, row) {
     line = cleanLine(line).replace(/\$\s*/g, '');
+    
+    // Regex original (muy estricto)
     const m = line.match(/^(\d{11})\s+(.+?)\s+(OBLIGATORIO|VOLUNTARIO)\s+(\S+)\s+([\d.,]+)\s+([\d.,]+)\s*%\s+([\d.,]+)\s+(\d+)$/i);
-    if (!m) return null;
+    if (m) {
+      const cuil = digits(m[1]);
+      return {
+        src: 'ALTAS', row,
+        cuil,
+        dni: cuil.length === 11 ? cuil.slice(2, -1).replace(/^0+/, '') : '',
+        nombre: cleanLine(m[2]),
+        plan: cleanLine(m[4]),
+        capitas: Number(m[8]),
+        valorPlan: asMoney(m[5]),
+        descuento: pct(m[6]),
+        liquidable: asMoney(m[7])
+      };
+    }
 
-    const cuil = digits(m[1]);
-    return {
-      src: 'ALTAS', row,
-      cuil,
-      dni: cuil.length === 11 ? cuil.slice(2, -1).replace(/^0+/, '') : '',
-      nombre: cleanLine(m[2]),
-      plan: cleanLine(m[4]),
-      capitas: Number(m[8]),
-      valorPlan: asMoney(m[5]),
-      descuento: pct(m[6]),
-      liquidable: asMoney(m[7])
-    };
+    // Alternativa más flexible: busca patrón con CUIL + OBLIGATORIO/VOLUNTARIO
+    // Formato: CUIL NOMBRE (OBLIGATORIO|VOLUNTARIO) PLAN VALOR_PLAN DESC% LIQUIDABLE CAPITAS
+    const flexRegex = /^(\d{2}-?\d{8}-?\d?)(?:\s+)?(.+?)?(?:\s+)(OBLIGATORIO|VOLUNTARIO)(.*)/i;
+    const flexMatch = line.match(flexRegex);
+    
+    if (flexMatch) {
+      const rest = flexMatch[4] || '';
+      // Busca: PLAN VALOR% DESC% LIQUIDABLE CAPITAS
+      const tailRegex = /(\S+)\s+([\d.,]+)\s+([\d.,]+)\s*%\s+([\d.,]+)\s+(\d+)/;
+      const tailMatch = rest.match(tailRegex);
+      
+      if (tailMatch) {
+        const cuil = digits(flexMatch[1]);
+        return {
+          src: 'ALTAS', row,
+          cuil,
+          dni: cuil.length === 11 ? cuil.slice(2, -1).replace(/^0+/, '') : '',
+          nombre: cleanLine(flexMatch[2] || ''),
+          plan: cleanLine(tailMatch[1]),
+          capitas: Number(tailMatch[5]),
+          valorPlan: asMoney(tailMatch[2]),
+          descuento: pct(tailMatch[3]),
+          liquidable: asMoney(tailMatch[4])
+        };
+      }
+    }
+
+    return null;
   }
 
   function trailingMoney(line) {
@@ -75,12 +107,11 @@
     const tail = trailingMoney(line);
     if (!tail) return null;
 
-    // La fila puede traer FECHA y BROKER antes de CÁPITAS (ej. "09-06-26 DMC 1 A2 NO ...").
-    // Algunas filas (Zenith) no traen fecha. El broker puede tener varias palabras,
-    // así que se busca de forma no-codiciosa hasta dar con CÁPITAS + PLAN + COPAGOS(SI/NO).
+    // Intenta con el formato original primero
     const prefixNoDate = tail.prefix.replace(/^\d{2}-\d{2}-\d{2}\s+/, '');
     const start = prefixNoDate.match(/^(?:.+?\s+)?(\d+)\s+(\S+)\s+(?:SI|NO)\s+(.+)$/i);
     if (!start) return null;
+    
     const capitas = Number(start[1]);
     const plan = cleanLine(start[2]);
     let body = cleanLine(start[3]);
@@ -122,6 +153,7 @@
   function parsePdfRows(lines, src) {
     const parser = src === 'ALTAS' ? parseAltasLine : parseVentasLine;
     const out = [];
+    const skipped = []; // Para debugging
 
     for (let i = 0; i < lines.length; i++) {
       let parsed = parser(lines[i], i + 1);
@@ -129,12 +161,24 @@
         parsed = parser(`${lines[i]} ${lines[i + 1]}`, i + 1);
         if (parsed) i++;
       }
-      if (parsed) out.push(parsed);
+      if (parsed) {
+        out.push(parsed);
+      } else {
+        // Log de líneas que no se reconocen (solo primeras 5 para debugging)
+        if (skipped.length < 5 && lines[i].length > 10) {
+          skipped.push(lines[i]);
+        }
+      }
     }
 
     if (!out.length) {
-      throw new Error(`${src}: pude abrir el PDF, pero no reconocí filas. Verificá que sea un PDF exportado con texto seleccionable y no una imagen escaneada.`);
+      const debugMsg = skipped.length 
+        ? `\n\nEjemplos de líneas no reconocidas:\n${skipped.join('\n')}`
+        : '';
+      throw new Error(`${src}: pude abrir el PDF, pero no reconocí filas. Verificá que sea un PDF exportado con texto seleccionable y no una imagen escaneada.${debugMsg}`);
     }
+    
+    console.info(`[LC PDF] ${src}: ${out.length} filas reconocidas (${lines.length - out.length} ignoradas)`);
     return out;
   }
 
@@ -143,8 +187,15 @@
     if (!isPdf) return originalRead(file, src);
 
     const lines = await pdfLines(file);
+    console.info(`[LC PDF] ${src}: Extrajeron ${lines.length} líneas del PDF`);
+    
+    // Log de las primeras líneas para debugging
+    if (lines.length > 0) {
+      console.info(`[LC PDF] ${src}: Primeras 3 líneas:`);
+      lines.slice(0, 3).forEach((l, i) => console.info(`  ${i}: ${l}`));
+    }
+
     const rows = parsePdfRows(lines, src);
-    console.info(`[LC PDF] ${src}: ${rows.length} filas reconocidas`);
     return rows;
   };
 })();
