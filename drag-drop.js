@@ -14,6 +14,11 @@
     const input = document.getElementById(id);
     const zone = document.getElementById(`${id}-zone`);
     if (!input || !zone) return;
+    zone.addEventListener('keydown', event => {
+      if (event.key === 'Enter' || event.key === ' ') {
+        event.preventDefault(); input.click();
+      }
+    });
 
     ['dragenter', 'dragover'].forEach(type => {
       zone.addEventListener(type, event => {
