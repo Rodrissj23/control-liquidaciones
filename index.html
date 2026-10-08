@@ -8,7 +8,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=IBM+Plex+Mono:wght@400;500&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="styles.css">
+<link rel="stylesheet" href="styles.css?v=1.0">
 <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/build/pdf.min.js"></script>
 <script>pdfjsLib.GlobalWorkerOptions.workerSrc='https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/build/pdf.worker.min.js';</script>
@@ -22,27 +22,39 @@
     <section class="panel upload-panel">
       <div class="panel-head"><div><span class="step">01</span><h2>Cargar archivos</h2></div><span class="state" id="control-state">NUEVO</span></div>
       <div class="period-row"><label><span>Período</span><input id="period" type="month"></label></div>
+      <p class="upload-guide">Cargá los archivos tal como los recibís. El sistema ordena los datos necesarios para el control. Verificá la vista previa antes de comparar.</p>
       <div class="upload-grid">
-        <label class="dropzone" id="altas-zone"><input id="altas" type="file" accept=".xlsx,.xls,.csv,.pdf,application/pdf"><span class="file-kind">ALTAS</span><strong id="altas-name">Arrastrá el archivo acá</strong><small>o hacé click · Excel, CSV o PDF</small></label>
-        <label class="dropzone" id="ventas-zone"><input id="ventas" type="file" accept=".xlsx,.xls,.csv,.pdf,application/pdf"><span class="file-kind">VENTAS</span><strong id="ventas-name">Arrastrá el archivo acá</strong><small>o hacé click · Excel, CSV o PDF</small></label>
+        <div class="upload-source">
+          <label class="dropzone" id="altas-zone" tabindex="0" aria-label="Cargar archivo de Altas"><input id="altas" type="file" accept=".xlsx,.xls,.csv,.pdf,application/pdf"><span class="upload-top"><span class="file-kind">ALTAS · LIQUIDACIÓN</span><span id="altas-status" class="badge">Sin archivo</span></span><strong id="altas-name">Arrastrá el archivo acá</strong><small>o seleccioná · Excel, CSV o PDF con texto</small></label>
+          <button id="altas-remove" class="secondary remove-file" hidden>Quitar Altas</button>
+          <div id="altas-summary" class="upload-summary" aria-live="polite" hidden></div>
+        </div>
+        <div class="upload-source">
+          <label class="dropzone" id="ventas-zone" tabindex="0" aria-label="Cargar archivo de Ventas"><input id="ventas" type="file" accept=".xlsx,.xls,.csv,.pdf,application/pdf"><span class="upload-top"><span class="file-kind">VENTAS · PARA COMPARAR</span><span id="ventas-status" class="badge">Sin archivo</span></span><strong id="ventas-name">Arrastrá el archivo acá</strong><small>o seleccioná · Excel, CSV o PDF con texto</small></label>
+          <button id="ventas-remove" class="secondary remove-file" hidden>Quitar Ventas</button>
+          <div id="ventas-summary" class="upload-summary" aria-live="polite" hidden></div>
+        </div>
       </div>
-      <div class="actions"><button id="analyze" disabled>Analizar liquidación →</button><span id="helper">Cargá ambos archivos para continuar.</span></div>
+      <div class="actions"><button id="analyze" disabled>Comparar liquidación →</button><span id="helper" role="status">Cargá ambos archivos para continuar.</span></div>
     </section>
     <section class="panel result-panel" id="result-panel" hidden>
       <div class="panel-head"><div><span class="step">02</span><h2>Resultado</h2></div><span class="state" id="result-state">ANALIZADO</span></div>
+      <p id="result-context" class="muted"></p>
       <div class="metrics" id="metrics"></div>
-      <div class="tabs"><button class="tab active" data-tab="review">Revisar fichas <span id="review-count"></span></button><button class="tab" data-tab="all">Todas las coincidencias</button></div>
+      <div class="tabs"><button class="tab active" data-tab="review">Revisar fichas <span id="review-count"></span></button><button class="tab" data-tab="all">Todos los registros</button></div>
+      <div class="result-filters"><label>Buscar titular, DNI o CUIL<input id="search" type="search" placeholder="Nombre o documento"></label><label>Mostrar<select id="case-filter"><option value="">Todos</option><option value="PENDIENTE">Pendientes de decisión</option><option value="MATCH">Coincidencias</option><option value="VENTA_SIN_ALTA">Ventas sin Alta</option><option value="ALTA_SIN_VENTA">Altas sin Venta</option><option value="DUPLICADO">DNI/CUIL repetidos</option></select></label></div>
       <div id="review-list" class="case-list"></div><div id="all-list" class="case-list" hidden></div>
       <div class="close-box"><div><strong>Cierre del control</strong><p id="close-helper">Resolvé todas las fichas que requieren decisión para poder cerrar.</p></div><div class="close-actions"><button class="secondary" id="save-control">Guardar borrador</button><button id="close-control" disabled>Cerrar liquidación</button><button class="secondary" id="download-report" disabled>Descargar informe PDF</button></div></div>
     </section>
     <section class="history"><div class="section-head"><div><span class="step">03</span><h2>Historial</h2></div><span id="history-count">0 controles</span></div><div id="history-list" class="history-list"></div></section>
   </main>
-  <footer><span>LC-0.6 · Recuperación de importes truncados</span><a href="../" onclick="event.preventDefault(); history.length > 1 ? history.back() : null;">← volver al Hub</a></footer>
+  <footer><span>LC-1.0 · Control de liquidaciones</span><a href="../" onclick="event.preventDefault(); history.length > 1 ? history.back() : null;">← volver al Hub</a></footer>
 </div>
-<script src="app.js"></script>
-<script src="numeric-fix.js"></script>
-<script src="pdf-support.js"></script>
-<script src="truncated-value-fix.js"></script>
-<script src="drag-drop.js"></script>
+<script src="core.js?v=1.0"></script>
+<script src="numeric-fix.js?v=1.0"></script>
+<script src="app.js?v=1.0"></script>
+<script src="pdf-support.js?v=1.0"></script>
+<script src="truncated-value-fix.js?v=1.0"></script>
+<script src="drag-drop.js?v=1.0"></script>
 </body>
 </html>
