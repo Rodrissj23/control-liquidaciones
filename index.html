@@ -8,7 +8,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=IBM+Plex+Mono:wght@400;500&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="styles.css?v=1.0">
+<link rel="stylesheet" href="styles.css?v=1.1">
 <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/build/pdf.min.js"></script>
 <script>pdfjsLib.GlobalWorkerOptions.workerSrc='https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/build/pdf.worker.min.js';</script>
@@ -42,19 +42,19 @@
       <p id="result-context" class="muted"></p>
       <div class="metrics" id="metrics"></div>
       <div class="tabs"><button class="tab active" data-tab="review">Revisar fichas <span id="review-count"></span></button><button class="tab" data-tab="all">Todos los registros</button></div>
-      <div class="result-filters"><label>Buscar titular, DNI o CUIL<input id="search" type="search" placeholder="Nombre o documento"></label><label>Mostrar<select id="case-filter"><option value="">Todos</option><option value="PENDIENTE">Pendientes de decisión</option><option value="MATCH">Coincidencias</option><option value="VENTA_SIN_ALTA">Ventas sin Alta</option><option value="ALTA_SIN_VENTA">Altas sin Venta</option><option value="DUPLICADO">DNI/CUIL repetidos</option></select></label></div>
+      <div class="result-filters"><label>Buscar titular, DNI o CUIL<input id="search" type="search" placeholder="Nombre o documento"></label><label>Mostrar<select id="case-filter"><option value="">Todos</option><option value="PENDIENTE">Pendientes de decisión</option><option value="MATCH">Coincidencias</option><option value="DIFERENCIA">Diferencias de datos</option><option value="INCOMPLETO">Datos incompletos</option><option value="VENTA_SIN_ALTA">Ventas sin Alta</option><option value="ALTA_SIN_VENTA">Altas sin Venta</option><option value="DUPLICADO">DNI/CUIL repetidos</option></select></label></div>
       <div id="review-list" class="case-list"></div><div id="all-list" class="case-list" hidden></div>
       <div class="close-box"><div><strong>Cierre del control</strong><p id="close-helper">Resolvé todas las fichas que requieren decisión para poder cerrar.</p></div><div class="close-actions"><button class="secondary" id="save-control">Guardar borrador</button><button id="close-control" disabled>Cerrar liquidación</button><button class="secondary" id="download-report" disabled>Descargar informe PDF</button></div></div>
     </section>
     <section class="history"><div class="section-head"><div><span class="step">03</span><h2>Historial</h2></div><span id="history-count">0 controles</span></div><div id="history-list" class="history-list"></div></section>
   </main>
-  <footer><span>LC-1.0 · Control de liquidaciones</span><a href="../" onclick="event.preventDefault(); history.length > 1 ? history.back() : null;">← volver al Hub</a></footer>
+  <footer><span>LC-1.1 · Control de liquidaciones</span><a href="../" onclick="event.preventDefault(); history.length > 1 ? history.back() : null;">← volver al Hub</a></footer>
 </div>
-<script src="core.js?v=1.0"></script>
-<script src="numeric-fix.js?v=1.0"></script>
-<script src="app.js?v=1.0"></script>
-<script src="pdf-support.js?v=1.0"></script>
-<script src="truncated-value-fix.js?v=1.0"></script>
-<script src="drag-drop.js?v=1.0"></script>
+<script src="core.js?v=1.1"></script>
+<script src="numeric-fix.js?v=1.1"></script>
+<script src="app.js?v=1.1"></script>
+<script src="pdf-support.js?v=1.1"></script>
+<script src="truncated-value-fix.js?v=1.1"></script>
+<script src="drag-drop.js?v=1.1"></script>
 </body>
 </html>

@@ -1,4 +1,4 @@
-# Control de Liquidaciones 1.0
+# Control de Liquidaciones 1.1
 
 Carga Altas y Ventas tal como llegan en Excel, CSV o PDF con texto seleccionable, normaliza los datos y compara sin depender del formato de entrada.
 
@@ -26,10 +26,14 @@ No es un lector universal: nuevos diseños de PDF necesitan un adaptador validad
 ## Validación
 
 ```bash
-node --test tests/core.test.cjs
+node --test tests/*.test.cjs
 ```
 
-Se verificaron además las exportaciones reales de agosto (146 Altas y 158 Ventas) y una exportación reducida de septiembre (38 Ventas). El formato de Altas de septiembre se probó con una reproducción del texto visible en la captura; falta el archivo completo para validar todos sus registros.
+20 pruebas automáticas aprobadas. Se verificaron las exportaciones reales de agosto (146 Altas y 158 Ventas), una exportación reducida de septiembre (38 Ventas) y los dos PDFs completos de septiembre (144 Altas y 134 Ventas, con 237 cápitas en Ventas). Los recuentos de septiembre se contrastaron mediante una extracción independiente con pdfplumber.
+
+Los PDFs de septiembre contienen 122 asociaciones únicas, 8 ventas sin Alta, 20 Altas sin Venta y 6 registros con asociación duplicada (4 de Ventas y 2 de Altas). Se distinguen 12 asociaciones con diferencias verificables de las 122 que carecen de cápitas en Altas. Las categorías de diferencias y datos incompletos pueden superponerse.
+
+El lector PDF usa las posiciones de las columnas monetarias cuando están disponibles; una celda vacía no desplaza los importes hacia la columna equivocada. DNI con puntos se normaliza. Descuentos sin símbolo % mantienen el valor original y un aviso de revisión.
 
 ## Dependencias
 

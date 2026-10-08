@@ -63,10 +63,13 @@ function change(a, b) { return Number.isFinite(a) && Number.isFinite(b) && a > 0
 function accepted(a, b) { const ratio = change(a, b); return ratio != null && ratio >= 0 && ratio <= TOL + 1e-10; }
 function compare(v, a) {
   const issues = [], info = [];
+  const dataIssues = [];
   for (const record of [v, a]) {
+    for (const warning of record.importWarnings || []) issues.push(`${warning.toUpperCase()} (${record.src})`);
     for (const key of missingFields(record)) issues.push(`${fieldLabels[key].toUpperCase()} SIN DATO VÁLIDO (${record.src})`);
     if (!record.plan) issues.push(`PLAN SIN DATO (${record.src})`);
   }
+  dataIssues.push(...issues);
   const valid = key => !missingFields(v).includes(key) && !missingFields(a).includes(key);
   if (valid('capitas') && v.capitas !== a.capitas) issues.push('CÁPITAS');
   if (valid('descuento') && Math.abs(v.descuento - a.descuento) > .01) issues.push('DESCUENTO');
@@ -82,7 +85,7 @@ function compare(v, a) {
       if (Math.abs(record.valorPlan * (1 - record.descuento / 100) - record.liquidable) > 1.5) issues.push(record === a ? 'CÁLCULO DESCUENTO' : 'CÁLCULO DESCUENTO (VENTAS)');
     }
   }
-  return { id: crypto.randomUUID(), type: 'MATCH', v, a, issues, info,
+  return { id: crypto.randomUUID(), type: 'MATCH', v, a, issues, info, dataIssues,
     pv: change(v.valorPlan, a.valorPlan), lv: change(v.liquidable, a.liquidable),
     needs: issues.length > 0, resolution: issues.length ? '' : info.length ? 'VARIACION_ADMITIDA' : 'CORRECTO', note: '' };
 }
@@ -91,7 +94,7 @@ function duplicateRows(rows) { return new Set(rows.filter((r, i) => rows.some((x
 function singleCase(record, type, duplicate = false) {
   return { id: crypto.randomUUID(), type, v: record.src === 'VENTAS' ? record : null,
     a: record.src === 'ALTAS' ? record : null, info: [], needs: true, resolution: '', note: '',
-    issues: duplicate ? ['DNI/CUIL REPETIDO: REVISAR ASOCIACIÓN'] : [type === 'VENTA_SIN_ALTA' ? 'NO EN ALTAS' : 'NO EN VENTAS'] };
+    issues: [...(duplicate ? ['DNI/CUIL REPETIDO: REVISAR ASOCIACIÓN'] : [type === 'VENTA_SIN_ALTA' ? 'NO EN ALTAS' : 'NO EN VENTAS']), ...missingFields(record).map(key => `${fieldLabels[key].toUpperCase()} SIN DATO VÁLIDO (${record.src})`), ...(record.importWarnings || [])] };
 }
 function analyze(vs, as) {
   const used = new Set(), cases = [], duplicatesV = duplicateRows(vs), duplicatesA = duplicateRows(as);

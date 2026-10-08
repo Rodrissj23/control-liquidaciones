@@ -53,7 +53,7 @@ function showUpload(id) {
   const rows = state.rows, missing = rows.filter(r => missingFields(r).length), duplicate = duplicateRows(rows);
   const capitasKnown = rows.filter(r => !missingFields(r).includes('capitas'));
   const fields = Object.keys(fieldLabels).filter(key => rows.some(r => missingFields(r).includes(key)));
-  const warnings = [];
+  const warnings = [...new Set(rows.flatMap(r => r.importWarnings || []))];
   if (fields.length) warnings.push(`Datos ausentes o inválidos: ${fields.map(k => fieldLabels[k]).join(', ')}. Esas fichas requerirán revisión.`);
   const sheets = [...new Set(rows.map(r => r.sheet).filter(Boolean))];
   if (sheets.length) warnings.push(`Hoja interpretada: ${sheets.join(', ')}.`);
@@ -112,7 +112,8 @@ function stats(cs) {
   return { ventas: cs.filter(c => c.v).length, altas: cs.filter(c => c.a).length,
     ok: matched.filter(c => !c.needs && !c.info?.length).length,
     vari: matched.filter(c => !c.needs && c.info?.length).length,
-    diff: matched.filter(c => c.needs).length, duplicates: cs.filter(c => c.type === 'DUPLICADO').length,
+    diff: matched.filter(c => c.issues.some(i => !(c.dataIssues || []).includes(i))).length,
+    incomplete: matched.filter(c => c.dataIssues?.length).length, duplicates: cs.filter(c => c.type === 'DUPLICADO').length,
     vsa: cs.filter(c => c.type === 'VENTA_SIN_ALTA').length, asv: cs.filter(c => c.type === 'ALTA_SIN_VENTA').length };
 }
 function unresolved() { return current.cases.filter(c => c.needs && (!c.resolution || c.resolution === 'PENDIENTE')); }
@@ -123,7 +124,7 @@ function opts(c) {
   return `<div class="decision"><label>Resolución<select data-r="${c.id}" ${current.closed ? 'disabled' : ''}><option value="">Seleccionar…</option>${options.map(o => `<option value="${o}" ${c.resolution === o ? 'selected' : ''}>${resolutions[o]}</option>`).join('')}</select></label><label>Nota de revisión<textarea data-n="${c.id}" rows="2" ${current.closed ? 'disabled' : ''}>${esc(c.note)}</textarea></label></div>`;
 }
 function card(c) {
-  const badge = c.type === 'DUPLICADO' ? 'Asociación duplicada: revisar' : c.type === 'VENTA_SIN_ALTA' ? 'Venta no encontrada en Altas' : c.type === 'ALTA_SIN_VENTA' ? 'Alta sin venta asociada' : c.needs ? 'Revisar diferencias' : c.info?.length ? 'Variación admitida' : 'Correcto';
+  const badge = c.type === 'DUPLICADO' ? 'Asociación duplicada: revisar' : c.type === 'VENTA_SIN_ALTA' ? 'Venta no encontrada en Altas' : c.type === 'ALTA_SIN_VENTA' ? 'Alta sin venta asociada' : c.needs ? c.issues.every(i => (c.dataIssues || []).includes(i)) ? 'Datos incompletos: control parcial' : 'Revisar diferencias' : c.info?.length ? 'Variación admitida' : 'Correcto';
   const r = c.v || c.a;
   const fields = [['plan', 'Plan'], ...Object.entries(fieldLabels)];
   const table = c.type === 'MATCH' ? `<div class="compare"><div class="compare-row"><span>Campo</span><b>Ventas</b><b>Altas</b></div>${fields.map(([key, label]) => `<div class="compare-row ${c.issues.some(i => i.startsWith(label.toUpperCase())) ? 'bad' : ''}"><span>${label}</span><b>${esc(fieldValue(c.v, key))}</b><b>${esc(fieldValue(c.a, key))}${key === 'valorPlan' || key === 'liquidable' ? ` <small>${fp(key === 'valorPlan' ? c.pv : c.lv)}</small>` : ''}</b></div>`).join('')}</div>` : `<p class="single-values">${r.src} · plan ${esc(r.plan || 'Sin dato')} · ${fieldValue(r, 'capitas')} cápitas · ${fmt(r.liquidable)}</p>`;
@@ -132,7 +133,7 @@ function card(c) {
 }
 function renderLists() {
   const term = norm($('#search').value), filter = $('#case-filter').value;
-  const matches = c => (!term || norm(`${title(c)} ${c.v?.dni || c.a?.dni} ${c.v?.cuil || c.a?.cuil}`).includes(term)) && (!filter || (filter === 'PENDIENTE' ? c.needs && (!c.resolution || c.resolution === 'PENDIENTE') : c.type === filter));
+  const matches = c => (!term || norm(`${title(c)} ${c.v?.dni || c.a?.dni} ${c.v?.cuil || c.a?.cuil}`).includes(term)) && (!filter || (filter === 'INCOMPLETO' ? c.dataIssues?.length : filter === 'DIFERENCIA' ? c.type === 'MATCH' && c.issues.some(i => !(c.dataIssues || []).includes(i)) : filter === 'PENDIENTE' ? c.needs && (!c.resolution || c.resolution === 'PENDIENTE') : c.type === filter));
   const review = current.cases.filter(c => c.needs && matches(c)), all = current.cases.filter(matches);
   $('#review-list').innerHTML = review.length ? review.map(card).join('') : '<div class="empty-state">No hay fichas para revisar con estos filtros.</div>';
   $('#all-list').innerHTML = all.length ? all.map(card).join('') : '<div class="empty-state">No hay resultados con estos filtros.</div>';
@@ -148,7 +149,7 @@ function renderLists() {
 }
 function render() {
   const s = stats(current.cases);
-  $('#metrics').innerHTML = [['Ventas', s.ventas], ['Correctas', s.ok], ['Variación admitida', s.vari], ['Diferencias', s.diff], ['Ventas sin Alta', s.vsa], ['Altas sin Venta', s.asv]].map(([label, count]) => `<div class="metric"><span>${label}</span><strong>${count}</strong></div>`).join('');
+  $('#metrics').innerHTML = [['Ventas', s.ventas], ['Correctas', s.ok], ['Variación admitida', s.vari], ['Diferencias', s.diff], ['Datos incompletos', s.incomplete], ['Ventas sin Alta', s.vsa], ['Altas sin Venta', s.asv], ['Duplicados', s.duplicates]].map(([label, count]) => `<div class="metric"><span>${label}</span><strong>${count}</strong></div>`).join('');
   $('#result-context').textContent = `${current.period} · ${s.ventas} ventas / ${s.altas} altas · ${s.duplicates} registros con asociación duplicada`;
   $('#review-count').textContent = `(${current.cases.filter(c => c.needs).length})`;
   $('#result-state').textContent = current.closed ? 'CERRADO' : 'ANALIZADO';
@@ -206,7 +207,7 @@ $('#download-report').onclick = () => {
   text(`Periodo: ${current.period} | Tolerancia positiva: +2,40%`);
   text(`Altas: ${current.files.altas}`); text(`Ventas: ${current.files.ventas}`);
   text(`Ventas: ${s.ventas} | Altas: ${s.altas} | Correctas: ${s.ok} | Variaciones: ${s.vari}`);
-  text(`Diferencias: ${s.diff} | Ventas sin alta: ${s.vsa} | Altas sin venta: ${s.asv} | Duplicados: ${s.duplicates}`);
+  text(`Diferencias: ${s.diff} | Incompletos: ${s.incomplete} | Ventas sin alta: ${s.vsa} | Altas sin venta: ${s.asv} | Duplicados: ${s.duplicates}`);
   text('Observaciones y resoluciones', 12);
   for (const c of current.cases.filter(c => c.needs || c.info?.length)) {
     const r = c.v || c.a;

@@ -1,4 +1,4 @@
-# Reglas de comparación — 1.0
+# Reglas de comparación — 1.1
 
 - Cruce por identidad: CUIL y DNI como respaldo. Antes del cruce, bloquear la asociación automática si la identidad está repetida en cualquiera de las fuentes.
 - Cada registro se conserva en el resultado, también cuando faltan valores o no hay contraparte.
@@ -12,3 +12,6 @@
 - Las excepciones requieren decisión humana antes del cierre. No hay aprobación automática de faltantes o duplicados.
 - Al cerrar se genera un PDF con período, archivos, motivos, valores y resoluciones.
 - El período del control lo elige el usuario. No se deduce la fecha de alta a partir de la fecha de origen de una venta.
+
+- Diferencias verificables y datos incompletos se muestran por separado; no se contabiliza una ausencia como una diferencia de valor. Las categorías pueden superponerse.
+- En PDF, un importe vacío se respeta mediante la posición de su columna. Si no existe información de posición suficiente, los importes ambiguos se mantienen sin asignar.

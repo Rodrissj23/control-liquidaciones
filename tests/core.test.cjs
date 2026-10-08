@@ -65,3 +65,19 @@ test('reconstructed amounts retain original value and marker', () => {
  c.changed={...c.a,valorPlan:100,liquidable:70};
  const r=run('compare(v, changed)'); assert.equal(r.recoveredTruncated,true); assert.equal(r.recoveredFields.valorPlan.original,100); assert.equal(r.a.valorPlan,100000);
 });
+
+test('formatted DNI and empty first monetary column preserve the actual layout', () => {
+ const lines=['01-09-26 BROKER 3 A4 NO TC VOLUNTARIO 50% PERSONA 30.123.456 APROBADA $0,00 $0,00'];
+ lines.layout=[{financial:{valorPlan:null,discountAmount:0,liquidable:0}}];
+ const rows=c.window.LCPdf.parsePdfRows(lines,'VENTAS');
+ assert.equal(rows.length,1);assert.equal(rows[0].dni,'30123456');assert.equal(rows[0].valorPlan,null);assert.equal(rows[0].liquidable,0);
+});
+test('fraction discount in Altas remains visible and flagged for review', () => {
+ const rows=c.window.LCPdf.parsePdfRows(['202609 20301234569 PERSONA OBLIGATORIO Individual A2 SANTA FE 271,475 0.3 209,986'],'ALTAS');
+ assert.equal(rows[0].descuento,30);assert.equal(rows[0].rawDiscount,'0.3');assert.equal(rows[0].importWarnings.length,1);
+ c.changed=rows[0];assert.equal(run('compare(v, changed)').needs,true);
+});
+test('two amounts without column layout never imply their unknown columns', () => {
+ const rows=c.window.LCPdf.parsePdfRows(['01-09-26 BROKER 1 A2 CBU 30% PERSONA 30123456 APROBADA $30.000,00 $70.000,00'],'VENTAS');
+ assert.equal(rows[0].valorPlan,null);assert.equal(rows[0].liquidable,null);assert.equal(rows[0].importWarnings.length,1);
+});

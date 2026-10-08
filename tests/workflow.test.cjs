@@ -48,3 +48,11 @@ test('storage failure prevents closed control and report download',()=>{
  h.get('#close-control').onclick();
  assert.equal(h.run('current.closed'),false);assert.equal(h.get('#download-report').disabled,true);assert.match(h.get('#helper').textContent,/No se pudo guardar/);
 });
+
+test('missing data and verified value differences have separate metrics',()=>{
+ const h=harness();
+ h.run("const v={src:'VENTAS',dni:'30123456',plan:'A2',capitas:2,valorPlan:100000,descuento:30,liquidable:70000}; const a={...v,src:'ALTAS',capitas:null}; current={cases:[compare(v,a)]}");
+ assert.equal(h.run('stats(current.cases).diff'),0);assert.equal(h.run('stats(current.cases).incomplete'),1);
+ h.run("current.cases.push(compare(v,{...a,valorPlan:120000,liquidable:84000}))");
+ assert.equal(h.run('stats(current.cases).diff'),1);assert.equal(h.run('stats(current.cases).incomplete'),2);
+});
